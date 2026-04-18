@@ -9,5 +9,9 @@ router.get("/health", (req, res) => {
 });
 
 router.post("/upload", upload.single("resume"), uploadResume);
+router.get("/all", getAllResumes);
+router.get("/:id", getResumeById);
+router.delete("/:id", deleteResume);
+
 
 module.exports = router;
