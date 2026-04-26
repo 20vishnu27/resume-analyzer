@@ -2,7 +2,6 @@ const Resume = require("../models/Resume");
 const analyzeResume = require("../utils/analyzerService");
 const cleanupFile = require("../utils/cleanupFile");
 
-const Resume = require("../models/Resume");
 
 exports.getAllResumes = async (req, res) => {
   const data = await Resume.find().sort({ createdAt: -1 });
