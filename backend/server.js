@@ -1,52 +1,60 @@
 require("dotenv").config();
 
-const express      = require("express");
-const cors         = require("cors");
-const path         = require("path");
-const connectDB    = require("./config/db");
+const express = require("express");
+const cors = require("cors");
+const fs = require("fs");
+
+const connectDB = require("./config/db");
 const resumeRoutes = require("./routes/resumeRoutes");
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://yourfrontend.vercel.app"
-  ]
-}));
-
-// ── Database ───────────────────────────────────────────────────────────────────
+// ── Database ────────────────────────────────────────────────
 connectDB();
 
-// ── Middleware ─────────────────────────────────────────────────────────────────
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  methods: ["GET", "POST", "DELETE"],
-}));
+// ── CORS (single clean config) ──────────────────────────────
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      process.env.FRONTEND_URL
+    ].filter(Boolean),
+    methods: ["GET", "POST", "DELETE"],
+    credentials: true
+  })
+);
 
+// ── Middleware ───────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Make sure the uploads folder exists
-const fs = require("fs");
-if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
+// Ensure uploads folder exists
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
 
-// ── Routes ─────────────────────────────────────────────────────────────────────
+// ── Routes ──────────────────────────────────────────────────
 app.use("/api/resume", resumeRoutes);
 
-// ── Root health check ──────────────────────────────────────────────────────────
+// ── Root Health Check ───────────────────────────────────────
 app.get("/", (req, res) => {
-  res.json({ message: "Resume Analyzer Node API running ✅", port: PORT });
+  res.json({
+    message: "Resume Analyzer Node API running ✅",
+    port: PORT
+  });
 });
 
-// ── Global error handler ───────────────────────────────────────────────────────
+// ── Global Error Handler ────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err.message);
-  res.status(500).json({ error: err.message });
+
+  res.status(500).json({
+    error: err.message || "Server error"
+  });
 });
 
-// ── Start ──────────────────────────────────────────────────────────────────────
+// ── Start Server ────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 Node API running on http://localhost:${PORT}`);
+  console.log(`🚀 Node API running on port ${PORT}`);
 });

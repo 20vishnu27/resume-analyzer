@@ -1,39 +1,36 @@
 const express = require("express");
-const router  = express.Router();
+const router = express.Router();
 
 const upload = require("../middleware/upload");
-const {
-  uploadResume,
-  getAllResumes,
-  getResumeById,
-  deleteResume,
-} = require("../controllers/resumeController");
+const resumeController = require("../controllers/resumeController");
 
-// ── Health check ───────────────────────────────────────────────────────────────
+// ── Health check ─────────────────────────────────────────────
 router.get("/health", (req, res) => {
-  res.json({ status: "ok", service: "Node Resume API" });
+  res.json({
+    status: "ok",
+    service: "Node Resume API"
+  });
 });
 
-// ── Main upload route ──────────────────────────────────────────────────────────
-// Multer middleware runs first; if it rejects (wrong type / too large) we catch
-// it below before it reaches uploadResume.
+// ── Upload Route ─────────────────────────────────────────────
 router.post(
   "/upload",
   (req, res, next) => {
     upload.single("file")(req, res, (err) => {
       if (err) {
-        // MulterError or our custom fileFilter error
-        return res.status(400).json({ error: err.message });
+        return res.status(400).json({
+          error: err.message
+        });
       }
       next();
     });
   },
-  uploadResume
+  resumeController.uploadResume
 );
 
-// ── Optional CRUD routes ───────────────────────────────────────────────────────
-router.get("/all",    getAllResumes);
-router.get("/:id",   getResumeById);
-router.delete("/:id",deleteResume);
+// ── CRUD Routes ──────────────────────────────────────────────
+router.get("/all", resumeController.getAllResumes);
+router.get("/:id", resumeController.getResumeById);
+router.delete("/:id", resumeController.deleteResume);
 
 module.exports = router;
