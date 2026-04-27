@@ -1,16 +1,20 @@
-const axios   = require("axios");
+const axios = require("axios");
 const FormData = require("form-data");
-const fs       = require("fs");
+const fs = require("fs");
 
-const FASTAPI_URL = process.env.FASTAPI_URL || "http://127.0.0.1:8000";
+// Uses Render env variable first, falls back to local development
+const FASTAPI_URL =
+  process.env.LOGIC_API_URL ||
+  process.env.FASTAPI_URL ||
+  "http://127.0.0.1:8000";
 
 /**
- * Forwards the uploaded PDF (and optional job description) to the
- * FastAPI Python service and returns the parsed analysis result.
+ * Sends uploaded PDF + optional job description
+ * to FastAPI logic service.
  *
- * @param {string} filePath      - Absolute/relative path to the temp PDF on disk
- * @param {string} jobDescription - Optional job description text
- * @returns {Promise<object>}    - The analysis result from FastAPI
+ * @param {string} filePath
+ * @param {string} jobDescription
+ * @returns {Promise<object>}
  */
 const analyzeResume = async (filePath, jobDescription = "") => {
   if (!fs.existsSync(filePath)) {
@@ -27,21 +31,27 @@ const analyzeResume = async (filePath, jobDescription = "") => {
       form,
       {
         headers: form.getHeaders(),
-        timeout: 60_000, // 60 s — HuggingFace summarisation can be slow
+        timeout: 60000,
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
       }
     );
+
     return response.data;
 
   } catch (err) {
     if (err.code === "ECONNREFUSED") {
       throw new Error(
-        `Could not connect to FastAPI at ${FASTAPI_URL}. ` +
-        `Make sure the Python service is running (uvicorn main:app --reload).`
+        `Could not connect to logic service at ${FASTAPI_URL}`
       );
     }
-    // Axios wraps non-2xx responses — surface the FastAPI error message
-    const detail = err.response?.data?.detail || err.response?.data?.error || err.message;
-    throw new Error(`FastAPI error: ${detail}`);
+
+    const detail =
+      err.response?.data?.detail ||
+      err.response?.data?.error ||
+      err.message;
+
+    throw new Error(`Logic service error: ${detail}`);
   }
 };
 
