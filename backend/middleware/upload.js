@@ -1,16 +1,26 @@
 const multer = require("multer");
 const path   = require("path");
+const fs     = require("fs");
+
+// Render's filesystem is read-only except /tmp
+// We read the dir set by server.js, or fall back to /tmp/uploads
+const UPLOAD_DIR = process.env.UPLOAD_DIR || "/tmp/uploads";
+
+// Ensure the directory exists at require-time too
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => {
-    // e.g. 1714200000000-resume.pdf  — timestamp prefix keeps names unique
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-    cb(null, `${Date.now()}-${safeName}`);
+  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+  filename:    (_req, file, cb) => {
+    // Strip special chars so the filename is safe on every OS
+    const safe = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    cb(null, `${Date.now()}-${safe}`);
   },
 });
 
-function fileFilter(req, file, cb) {
+function fileFilter(_req, file, cb) {
   if (file.mimetype === "application/pdf") {
     cb(null, true);
   } else {
@@ -21,7 +31,7 @@ function fileFilter(req, file, cb) {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
 });
 
 module.exports = upload;
