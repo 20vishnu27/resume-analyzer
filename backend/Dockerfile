@@ -6,7 +6,7 @@ WORKDIR /app
 # Copy manifests first so Docker caches this layer
 # and only re-runs npm install when package.json changes
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # ── Stage 2: runtime ───────────────────────────────────────────────────────────
 FROM node:20-slim AS runtime
