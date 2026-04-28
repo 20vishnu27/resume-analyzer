@@ -47,8 +47,10 @@ export default function Home() {
     form.append("job_description", jobDesc); // optional
 
     try {
-      const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
-      const res  = await fetch(`${BASE}/analyze-pdf`, { method: "POST", body: form });
+      // NEXT_PUBLIC_API_URL should be your Node backend URL on Render
+      // e.g. https://resume-analyzer-api-oohb.onrender.com
+      const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:5000";
+      const res  = await fetch(`${BASE}/api/resume/upload`, { method: "POST", body: form });
 
       if (!res.ok) {
         const detail = await res.text().catch(() => res.statusText);
@@ -60,12 +62,13 @@ export default function Home() {
       localStorage.setItem("fileName", file.name);
       router.push("/result");
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
+      const message = err instanceof Error ? err.message : "Something went wrong.";
       setError(
-        err.message.includes("fetch")
-          ? "Could not reach the backend. Make sure FastAPI is running on port 8000."
-          : err.message
+        message.includes("Failed to fetch") || message.includes("NetworkError")
+          ? "Could not reach the server. Please try again in a moment."
+          : message
       );
     } finally {
       setLoading(false);
