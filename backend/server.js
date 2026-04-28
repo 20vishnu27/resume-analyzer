@@ -21,14 +21,18 @@ app.set("trust proxy", 1);
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
-  process.env.FRONTEND_URL,       // e.g. https://your-app.vercel.app
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Allow server-to-server calls (no origin) and listed origins
-      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      // Allow server-to-server calls (no origin header)
+      if (!origin) return cb(null, true);
+      // Allow any vercel.app subdomain (covers preview + production URLs)
+      if (origin.endsWith(".vercel.app")) return cb(null, true);
+      // Allow explicitly listed origins
+      if (allowedOrigins.includes(origin)) return cb(null, true);
       cb(new Error(`CORS: origin ${origin} not allowed`));
     },
     methods: ["GET", "POST", "DELETE", "OPTIONS"],
